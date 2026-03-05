@@ -66,7 +66,7 @@ class MCPClientManager {
       const transport = new StdioClientTransport({
         command: command,
         args: args,
-        env: process.env,
+        env: process.env as Record<string, string>,
       });
 
       // Connect the client to the transport
@@ -246,6 +246,26 @@ class MCPClientManager {
       result: isConnected,
     });
     return isConnected;
+  }
+
+  /**
+   * Verify connection is still alive by checking if client exists and transport is active
+   */
+  async verifyConnection(): Promise<boolean> {
+    if (!this.client || !this.connectionStatus.connected) {
+      return false;
+    }
+    
+    try {
+      // Try to list tools as a way to verify connection
+      await this.client.listTools();
+      return true;
+    } catch (error) {
+      console.warn('[MCP Client] Connection verification failed:', error);
+      // Mark as disconnected if verification fails
+      this.connectionStatus = { connected: false };
+      return false;
+    }
   }
 }
 

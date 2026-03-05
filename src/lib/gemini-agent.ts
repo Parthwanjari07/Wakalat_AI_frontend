@@ -113,17 +113,104 @@ class GeminiAgent {
       const result = await chat.sendMessage(prompt);
       const response = result.response;
 
-      // Check for function calls
+      // Debug logging - check response structure
+      const finishReason = (response as any).finishReason || 'unknown';
+      const candidates = (response as any).candidates || [];
+      let rawResponseText = '';
+      
+      // Try multiple ways to get the text
+      try {
+        rawResponseText = response.text();
+      } catch (e) {
+        console.warn('[Gemini Agent] response.text() failed, trying alternative:', e);
+      }
+      
+      // If text() returned empty but we have candidates, try extracting from candidates
+      if (!rawResponseText && candidates.length > 0) {
+        const firstCandidate = candidates[0];
+        if (firstCandidate.content && firstCandidate.content.parts) {
+          const textParts = firstCandidate.content.parts
+            .filter((part: any) => part.text)
+            .map((part: any) => part.text);
+          rawResponseText = textParts.join('');
+        }
+      }
+      
+      console.log('[Gemini Agent] Response received:', {
+        hasFunctionCalls: !!(response.functionCalls && response.functionCalls.length > 0),
+        functionCallsCount: response.functionCalls?.length || 0,
+        hasText: !!rawResponseText,
+        textLength: rawResponseText?.length || 0,
+        finishReason: finishReason,
+        candidates: candidates.length,
+      });
+      
+      // Log first candidate details if available
+      if (candidates.length > 0) {
+        const firstCandidate = candidates[0];
+        console.log('[Gemini Agent] First candidate:', {
+          finishReason: firstCandidate.finishReason,
+          hasContent: !!(firstCandidate.content),
+          contentParts: firstCandidate.content?.parts?.length || 0,
+        });
+        
+        // Log the actual content parts
+        if (firstCandidate.content && firstCandidate.content.parts) {
+          console.log('[Gemini Agent] Content parts:', firstCandidate.content.parts.map((part: any) => ({
+            hasText: !!part.text,
+            textLength: part.text?.length || 0,
+            hasFunctionCall: !!part.functionCall,
+            functionCallName: part.functionCall?.name,
+          })));
+        }
+      }
+      
+      if (response.functionCalls && response.functionCalls.length > 0) {
+        console.log('[Gemini Agent] Function calls:', response.functionCalls.map((fc: any) => ({
+          name: fc.name,
+          args: fc.args,
+        })));
+      } else if (context?.tools && context.tools.length > 0) {
+        console.log('[Gemini Agent] No function calls made despite tools being available');
+        console.log('[Gemini Agent] Finish reason:', finishReason);
+        console.log('[Gemini Agent] Available tools:', context.tools.map(t => ({
+          name: t.name,
+          description: t.description?.substring(0, 100),
+        })));
+      }
+
+      // Check for function calls - try multiple locations
       const functionCalls: GeminiFunctionCall[] = [];
       let responseText = '';
       let functionResponses: any[] = [];
 
-      if (response.functionCalls && response.functionCalls.length > 0) {
+      // First, try response.functionCalls (standard location)
+      const rawFunctionCalls = response.functionCalls;
+      const responseFunctionCalls = Array.isArray(rawFunctionCalls) ? rawFunctionCalls : [];
+      
+      // Also check candidate parts for function calls (alternative location)
+      let candidateFunctionCalls: any[] = [];
+      if (candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
+        candidateFunctionCalls = candidates[0].content.parts
+          .filter((part: any) => part.functionCall)
+          .map((part: any) => part.functionCall);
+      }
+      
+      // Combine both sources
+      const allFunctionCalls = [...responseFunctionCalls, ...candidateFunctionCalls];
+      
+      console.log('[Gemini Agent] Function call sources:', {
+        responseFunctionCalls: responseFunctionCalls.length,
+        candidateFunctionCalls: candidateFunctionCalls.length,
+        total: allFunctionCalls.length,
+      });
+
+      if (allFunctionCalls.length > 0) {
         // Handle function calls
-        for (const call of response.functionCalls) {
+        for (const call of allFunctionCalls) {
           const functionCall: GeminiFunctionCall = {
-            name: call.name,
-            args: call.args || {},
+            name: call.name || call.functionName,
+            args: call.args || call.args || {},
           };
           functionCalls.push(functionCall);
 
@@ -154,11 +241,38 @@ class GeminiAgent {
         }
       } else {
         // No function calls, just return the text
-        responseText = response.text();
+        // Use the rawResponseText we already extracted
+        responseText = rawResponseText || '';
+        
+        // If we have tools but no function calls and no text, log a warning
+        if (context?.tools && context.tools.length > 0 && (!responseText || responseText.trim() === '')) {
+          console.warn('[Gemini Agent] Warning: Tools available but no function calls made and no text returned.');
+          console.warn('[Gemini Agent] Available tools:', context.tools.map(t => ({
+            name: t.name,
+            description: t.description?.substring(0, 100),
+            hasParameters: !!t.parameters,
+            parameterCount: t.parameters?.properties ? Object.keys(t.parameters.properties).length : 0,
+          })));
+          console.warn('[Gemini Agent] This might indicate:');
+          console.warn('  1. Tool schema format issue');
+          console.warn('  2. Gemini not recognizing when to use tools');
+          console.warn('  3. Prompt not explicit enough about tool usage');
+          console.warn('  4. Finish reason:', finishReason);
+          
+          // Try to get more info from candidates
+          if (candidates.length > 0) {
+            const candidate = candidates[0];
+            console.warn('[Gemini Agent] Candidate details:', {
+              finishReason: candidate.finishReason,
+              content: candidate.content,
+              safetyRatings: candidate.safetyRatings,
+            });
+          }
+        }
       }
 
       return {
-        text: responseText,
+        text: responseText || '',
         functionCalls: functionCalls.length > 0 ? functionCalls : undefined,
       };
     } catch (error) {

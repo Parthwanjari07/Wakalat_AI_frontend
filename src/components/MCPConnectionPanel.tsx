@@ -26,12 +26,12 @@ const MCPConnectionPanel: React.FC = () => {
 
   const handleConnect = async () => {
     setConfig(localConfig);
-    await connect();
-    if (status.connected) {
+    const connectionStatus = await connect();
+    if (connectionStatus.connected) {
       toast.success('MCP server connected successfully');
       setIsOpen(false);
     } else {
-      toast.error(status.error || 'Failed to connect to MCP server');
+      toast.error(connectionStatus.error || 'Failed to connect to MCP server');
     }
   };
 

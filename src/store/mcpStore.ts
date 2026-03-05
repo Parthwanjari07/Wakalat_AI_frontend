@@ -28,7 +28,7 @@ interface MCPStore {
   };
   setStatus: (status: MCPConnectionStatus) => void;
   setConfig: (config: { command: string; args: string[]; cwd: string }) => void;
-  connect: () => Promise<void>;
+  connect: () => Promise<MCPConnectionStatus>;
   disconnect: () => Promise<void>;
   checkStatus: () => Promise<void>;
   fetchTools: () => Promise<void>;
@@ -37,7 +37,7 @@ interface MCPStore {
 const defaultConfig = {
   command: 'uv',
   args: ['run', 'main.py'],
-  cwd: 'F:/code n shit/Wakalat-AI-Backend',
+  cwd: 'F:/code n shit/Wakalat/Wakalat-AI-Backend',
 };
 
 export const useMCPStore = create<MCPStore>((set, get) => ({
@@ -70,28 +70,30 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
       const data = await response.json();
       
       if (data.success) {
-        set({ status: { ...data.status, connecting: false } });
+        const connectionStatus = { ...data.status, connecting: false };
+        set({ status: connectionStatus });
         // Automatically fetch tools after successful connection
         if (data.status.connected) {
           await get().fetchTools();
         }
+        return connectionStatus;
       } else {
-        set({
-          status: {
-            connected: false,
-            error: data.error || 'Failed to connect',
-            connecting: false,
-          },
-        });
+        const errorStatus = {
+          connected: false,
+          error: data.error || 'Failed to connect',
+          connecting: false,
+        };
+        set({ status: errorStatus });
+        return errorStatus;
       }
     } catch (error) {
-      set({
-        status: {
-          connected: false,
-          error: error instanceof Error ? error.message : 'Connection failed',
-          connecting: false,
-        },
-      });
+      const errorStatus = {
+        connected: false,
+        error: error instanceof Error ? error.message : 'Connection failed',
+        connecting: false,
+      };
+      set({ status: errorStatus });
+      return errorStatus;
     }
   },
 

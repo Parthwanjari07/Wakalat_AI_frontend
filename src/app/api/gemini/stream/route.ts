@@ -24,27 +24,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('[Stream API] Calling runLegalAssistant with:', { message, useMCPTools });
     const result = await runLegalAssistant({
       message,
       conversationHistory: conversationHistory || [],
       useMCPTools,
     });
 
+    console.log('[Stream API] Result received:', {
+      hasFinalText: !!result.finalText,
+      finalTextLength: result.finalText?.length || 0,
+      toolCallsCount: result.toolCalls?.length || 0,
+    });
+
+    // Handle empty or error responses
+    if (!result.finalText || result.finalText.trim() === '' || result.finalText === 'No response generated.') {
+      const errorMsg = 'No response generated. This might be due to:\n' +
+        '1. MCP server not connected\n' +
+        '2. Tool execution error\n' +
+        '3. Gemini API issue\n\n' +
+        'Please check the server logs for more details.';
+      
+      return new Response(
+        errorMsg,
+        { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+      );
+    }
+
     const stream = new ReadableStream({
       start(controller) {
         const encoder = new TextEncoder();
-        const chunks = result.finalText.split(/\n{2,}/).filter(Boolean);
+        // Split by double newlines for better streaming, but handle empty text
+        const textToStream = result.finalText || 'No response available.';
+        const chunks = textToStream.split(/\n{2,}/).filter(Boolean);
 
         (async () => {
           try {
             if (!chunks.length) {
-              controller.enqueue(encoder.encode(result.finalText));
+              controller.enqueue(encoder.encode(textToStream));
             } else {
               for (const chunk of chunks) {
                 controller.enqueue(encoder.encode(`${chunk}\n\n`));
                 await new Promise((resolve) => setTimeout(resolve, 20));
               }
             }
+          } catch (streamError) {
+            console.error('[Stream API] Error in stream:', streamError);
+            controller.enqueue(encoder.encode('\n\nError streaming response.'));
           } finally {
             controller.close();
           }
@@ -55,16 +81,16 @@ export async function POST(request: NextRequest) {
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Transfer-Encoding': 'chunked',
       },
     });
   } catch (error) {
-    console.error('Gemini streaming error:', error);
+    console.error('[Stream API] Gemini streaming error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Stream API] Error stack:', error instanceof Error ? error.stack : 'No stack');
+    
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      `Error: ${errorMessage}\n\nPlease check:\n1. MCP server connection status\n2. Gemini API key configuration\n3. Server logs for detailed error information`,
+      { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
     );
   }
 }

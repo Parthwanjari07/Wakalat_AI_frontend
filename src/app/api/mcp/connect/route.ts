@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       const mcpConfig: MCPConnectionConfig = {
         command: config.command || 'uv',
         args: config.args || ['run', 'main.py'],
-        cwd: config.cwd || 'F:/code n shit/Wakalat-AI-Backend',
+        cwd: config.cwd || 'F:/code n shit/Wakalat/Wakalat-AI-Backend',
       };
 
       const status = await mcpManager.connect(mcpConfig);

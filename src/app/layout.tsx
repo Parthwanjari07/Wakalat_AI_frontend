@@ -15,6 +15,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from "@/components/AuthProvider";
 import AuthModal from "@/components/AuthModal";
 import { useAuthModalStore } from "@/store/authModalStore";
+import { useChatStore } from "@/store/chatStore";
 import MCPConnectionPanel from "@/components/MCPConnectionPanel";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -30,11 +31,13 @@ export default function RootLayout({
   // Get state from stores
   const { isOpen, close } = useSidebarStore();
   const { isOpen: isAuthOpen, close: closeAuth } = useAuthModalStore();
+  const loadChats = useChatStore((s) => s.loadChats);
 
-  // Set the document title
+  // Set the document title and load persisted chats
   useEffect(() => {
     document.title = "WAKALAT-AI";
-  }, []);
+    loadChats();
+  }, [loadChats]);
 
   return (
     <html lang="en" suppressHydrationWarning>
