@@ -91,14 +91,12 @@ const MCPConnectionPanel: React.FC = () => {
       const data = await res.json();
 
       if (data.success && data.access_token) {
-        // Auto-fill the Authorization header and auto-save to mcp.json
         const updatedConfig = {
           ...editing.config,
           headers: { ...editing.config.headers, Authorization: `Bearer ${data.access_token}` },
         };
         setEditing({ ...editing, config: updatedConfig });
 
-        // Auto-persist to mcp.json so the token isn't lost
         const name = editing.isNew ? newServerName.trim() : editing.name;
         if (name) {
           if (editing.isNew) {
@@ -107,11 +105,11 @@ const MCPConnectionPanel: React.FC = () => {
             await updateServer(name, updatedConfig);
           }
         }
-        toast.success('Token generated, applied, and saved to mcp.json!');
+        toast.success('Token generated and saved!');
       } else {
         toast.error(data.error || 'Failed to generate token');
       }
-    } catch (err) {
+    } catch {
       toast.error('Could not reach the server to generate token');
     } finally {
       setGeneratingToken(false);
@@ -135,9 +133,9 @@ const MCPConnectionPanel: React.FC = () => {
   };
 
   const getStatusIcon = () => {
-    if (status.connecting) return <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />;
-    if (status.connected) return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-    return <XCircle className="w-4 h-4 text-red-500" />;
+    if (status.connecting) return <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--accent)' }} />;
+    if (status.connected) return <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#5C8A6E' }} />;
+    return <XCircle className="w-3.5 h-3.5" style={{ color: '#C4534A' }} />;
   };
 
   const getStatusText = () => {
@@ -150,14 +148,22 @@ const MCPConnectionPanel: React.FC = () => {
 
   return (
     <>
+      {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-stone-700 dark:bg-zinc-800 text-white rounded-lg shadow-lg hover:bg-stone-600 dark:hover:bg-zinc-700 transition-colors"
+        className="fixed bottom-16 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-xl shadow-lg transition-all"
+        style={{
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+          color: 'var(--text-secondary)',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
         title="MCP Connection"
       >
         {getStatusIcon()}
-        <span className="text-sm font-medium">{getStatusText()}</span>
-        <Settings className="w-4 h-4" />
+        <span className="text-xs font-medium">{getStatusText()}</span>
+        <Settings className="w-3.5 h-3.5" />
       </button>
 
       <AnimatePresence>
@@ -166,149 +172,131 @@ const MCPConnectionPanel: React.FC = () => {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/50 z-40"
+              className="fixed inset-0 z-40"
+              style={{ background: 'rgba(0,0,0,0.5)' }}
             />
             <motion.div
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-20 right-4 z-50 w-[440px] max-h-[80vh] overflow-y-auto bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-stone-200 dark:border-zinc-700 p-5"
+              className="fixed bottom-28 right-4 z-50 w-[440px] max-h-[80vh] overflow-y-auto rounded-xl card-chamber p-5"
             >
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-stone-800 dark:text-stone-200">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-serif text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                   MCP Servers
                 </h3>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={startAddServer}
-                    className="p-1.5 text-stone-500 hover:text-green-600 dark:text-stone-400 dark:hover:text-green-400 transition-colors"
-                    title="Add server"
-                  >
-                    <Plus className="w-5 h-5" />
+                <div className="flex items-center gap-1">
+                  <button onClick={startAddServer} className="p-1.5 rounded-lg transition-colors btn-ghost" title="Add server">
+                    <Plus className="w-4 h-4" style={{ color: '#5C8A6E' }} />
                   </button>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="p-1.5 text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
-                  >
-                    <X className="w-5 h-5" />
+                  <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-lg transition-colors btn-ghost">
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
               {/* Server List */}
               {!configLoaded ? (
-                <div className="text-center py-4">
-                  <Loader2 className="w-5 h-5 animate-spin text-stone-400 mx-auto" />
-                  <p className="text-xs text-stone-500 mt-2">Loading config...</p>
+                <div className="text-center py-6">
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" style={{ color: 'var(--text-tertiary)' }} />
+                  <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>Loading config...</p>
                 </div>
               ) : servers.length === 0 && !editing ? (
-                <div className="text-center py-6">
-                  <p className="text-sm text-stone-500 dark:text-stone-400 mb-3">No MCP servers configured</p>
-                  <button
-                    onClick={startAddServer}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                  >
+                <div className="text-center py-8">
+                  <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>No MCP servers configured</p>
+                  <button onClick={startAddServer} className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
                     Add your first server
                   </button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {servers.map(([name, config]) => (
-                    <div
-                      key={name}
-                      className={`p-3 rounded-lg border transition-colors ${
-                        activeServer === name && status.connected
-                          ? 'border-green-400 bg-green-50 dark:bg-green-900/20 dark:border-green-600'
-                          : 'border-stone-200 dark:border-zinc-700 bg-stone-50 dark:bg-zinc-900'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          {config.type === 'sse' ? (
-                            <Globe className="w-4 h-4 text-blue-500" />
-                          ) : (
-                            <Terminal className="w-4 h-4 text-orange-500" />
-                          )}
-                          <span className="text-sm font-medium text-stone-800 dark:text-stone-200">
-                            {name}
-                          </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-stone-200 dark:bg-zinc-700 text-stone-600 dark:text-stone-400 uppercase">
-                            {config.type}
-                          </span>
+                  {servers.map(([name, config]) => {
+                    const isActive = activeServer === name && status.connected;
+                    return (
+                      <div
+                        key={name}
+                        className="p-3.5 rounded-xl transition-colors"
+                        style={{
+                          background: 'var(--bg-tertiary)',
+                          border: `1px solid ${isActive ? '#5C8A6E40' : 'var(--border)'}`,
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            {config.type === 'sse' ? (
+                              <Globe className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
+                            ) : (
+                              <Terminal className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
+                            )}
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{name}</span>
+                            <span
+                              className="text-[9px] px-1.5 py-0.5 rounded-md uppercase font-semibold tracking-wider"
+                              style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+                            >
+                              {config.type}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            <button onClick={() => startEditServer(name)} className="p-1 rounded-md transition-colors btn-ghost" title="Edit">
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                            <button onClick={() => handleDeleteServer(name)} className="p-1 rounded-md transition-colors btn-ghost" title="Remove">
+                              <Trash2 className="w-3 h-3" style={{ color: '#C4534A' }} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
+
+                        <p className="text-xs mb-2.5 truncate" style={{ color: 'var(--text-tertiary)' }}>
+                          {config.type === 'sse' ? config.url : `${config.command} ${(config.args || []).join(' ')}`}
+                        </p>
+
+                        {isActive ? (
                           <button
-                            onClick={() => startEditServer(name)}
-                            className="p-1 text-stone-400 hover:text-blue-500 transition-colors"
-                            title="Edit"
+                            onClick={handleDisconnect}
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-white transition-colors"
+                            style={{ background: '#C4534A' }}
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
+                            <WifiOff className="w-3 h-3" /> Disconnect
                           </button>
+                        ) : (
                           <button
-                            onClick={() => handleDeleteServer(name)}
-                            className="p-1 text-stone-400 hover:text-red-500 transition-colors"
-                            title="Remove"
+                            onClick={() => handleConnect(name)}
+                            disabled={status.connecting}
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-white transition-colors disabled:opacity-50"
+                            style={{ background: '#5C8A6E' }}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            {status.connecting ? (
+                              <><Loader2 className="w-3 h-3 animate-spin" /> Connecting...</>
+                            ) : (
+                              <><Wifi className="w-3 h-3" /> Connect</>
+                            )}
                           </button>
-                        </div>
+                        )}
                       </div>
-
-                      <p className="text-xs text-stone-500 dark:text-stone-400 mb-2 truncate">
-                        {config.type === 'sse' ? config.url : `${config.command} ${(config.args || []).join(' ')}`}
-                      </p>
-
-                      {activeServer === name && status.connected ? (
-                        <button
-                          onClick={handleDisconnect}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
-                        >
-                          <WifiOff className="w-3 h-3" /> Disconnect
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleConnect(name)}
-                          disabled={status.connecting}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors disabled:opacity-50"
-                        >
-                          {status.connecting ? (
-                            <><Loader2 className="w-3 h-3 animate-spin" /> Connecting...</>
-                          ) : (
-                            <><Wifi className="w-3 h-3" /> Connect</>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
               {/* Edit / Add Server Form */}
               {editing && (
-                <div className="mt-4 p-4 rounded-lg border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20">
-                  <h4 className="text-sm font-semibold text-stone-800 dark:text-stone-200 mb-3">
+                <div className="mt-4 p-4 rounded-xl" style={{ background: 'var(--accent-subtle)', border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)' }}>
+                  <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                     {editing.isNew ? 'Add Server' : `Edit "${editing.name}"`}
                   </h4>
 
                   {editing.isNew && (
                     <div className="mb-3">
-                      <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
-                        Server Name
-                      </label>
+                      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Server Name</label>
                       <input
-                        type="text"
-                        value={newServerName}
-                        onChange={(e) => setNewServerName(e.target.value)}
-                        className="w-full px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-600 rounded text-stone-800 dark:text-stone-200"
-                        placeholder="my-mcp-server"
+                        type="text" value={newServerName} onChange={(e) => setNewServerName(e.target.value)}
+                        className="w-full px-3 py-2 text-sm rounded-lg input-chamber" placeholder="my-mcp-server"
                       />
                     </div>
                   )}
 
                   {/* Transport type */}
                   <div className="mb-3">
-                    <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
-                      Transport
-                    </label>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Transport</label>
                     <div className="flex gap-2">
                       {(['sse', 'stdio'] as const).map((t) => (
                         <button
@@ -319,11 +307,12 @@ const MCPConnectionPanel: React.FC = () => {
                               ? { type: 'sse', url: '', headers: { Authorization: 'Bearer ' } }
                               : { type: 'stdio', command: 'uv', args: ['run', 'main.py'], cwd: '' },
                           })}
-                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                            editing.config.type === t
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-stone-200 dark:bg-zinc-700 text-stone-600 dark:text-stone-400'
-                          }`}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                          style={{
+                            background: editing.config.type === t ? 'var(--accent)' : 'var(--bg-tertiary)',
+                            color: editing.config.type === t ? '#0C0B09' : 'var(--text-secondary)',
+                            border: `1px solid ${editing.config.type === t ? 'var(--accent)' : 'var(--border)'}`,
+                          }}
                         >
                           {t === 'sse' ? <Globe className="w-3 h-3" /> : <Terminal className="w-3 h-3" />}
                           {t === 'sse' ? 'Remote (SSE)' : 'Local (stdio)'}
@@ -336,50 +325,36 @@ const MCPConnectionPanel: React.FC = () => {
                   {editing.config.type === 'sse' && (
                     <>
                       <div className="mb-3">
-                        <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
-                          SSE URL
-                        </label>
+                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>SSE URL</label>
                         <input
                           type="text"
                           value={editing.config.url || ''}
-                          onChange={(e) => setEditing({
-                            ...editing,
-                            config: { ...editing.config, url: e.target.value },
-                          })}
-                          className="w-full px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-600 rounded text-stone-800 dark:text-stone-200"
+                          onChange={(e) => setEditing({ ...editing, config: { ...editing.config, url: e.target.value } })}
+                          className="w-full px-3 py-2 text-sm rounded-lg input-chamber"
                           placeholder="https://your-server.com/sse"
                         />
                       </div>
 
-                      {/* Generate Token Section */}
-                      <div className="mb-3 p-3 rounded border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20">
+                      {/* Token */}
+                      <div className="mb-3 p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)' }}>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Key className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                          <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                            Access Token
-                          </span>
+                          <Key className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
+                          <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Access Token</span>
                         </div>
-                        <p className="text-[11px] text-stone-500 dark:text-stone-400 mb-2">
-                          Enter your email to generate a token from the server, or paste an existing token below.
+                        <p className="text-[11px] mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                          Enter your email to generate a token, or paste an existing one.
                         </p>
                         <div className="flex gap-2 mb-2">
                           <input
-                            type="email"
-                            value={tokenEmail}
-                            onChange={(e) => setTokenEmail(e.target.value)}
-                            className="flex-1 px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-600 rounded text-stone-800 dark:text-stone-200"
-                            placeholder="you@email.com"
+                            type="email" value={tokenEmail} onChange={(e) => setTokenEmail(e.target.value)}
+                            className="flex-1 px-2.5 py-1.5 text-xs rounded-lg input-chamber" placeholder="you@email.com"
                           />
                           <button
                             onClick={handleGenerateToken}
                             disabled={generatingToken || !tokenEmail.trim() || !editing.config.url}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-medium transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 btn-brass"
                           >
-                            {generatingToken ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Key className="w-3 h-3" />
-                            )}
+                            {generatingToken ? <Loader2 className="w-3 h-3 animate-spin" /> : <Key className="w-3 h-3" />}
                             Generate
                           </button>
                         </div>
@@ -388,12 +363,9 @@ const MCPConnectionPanel: React.FC = () => {
                           value={editing.config.headers?.Authorization || ''}
                           onChange={(e) => setEditing({
                             ...editing,
-                            config: {
-                              ...editing.config,
-                              headers: { ...editing.config.headers, Authorization: e.target.value },
-                            },
+                            config: { ...editing.config, headers: { ...editing.config.headers, Authorization: e.target.value } },
                           })}
-                          className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-600 rounded text-stone-800 dark:text-stone-200 font-mono"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg font-mono input-chamber"
                           placeholder="Bearer eyJ..."
                         />
                       </div>
@@ -403,73 +375,49 @@ const MCPConnectionPanel: React.FC = () => {
                   {/* Stdio fields */}
                   {editing.config.type === 'stdio' && (
                     <>
-                      <div className="mb-2 p-2 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700">
-                        <p className="text-[11px] text-green-700 dark:text-green-300">
-                          Local stdio connections don't require authentication. The MCP server runs as a local process.
+                      <div className="mb-2 p-2.5 rounded-lg" style={{ background: '#5C8A6E15', border: '1px solid #5C8A6E30' }}>
+                        <p className="text-[11px]" style={{ color: '#5C8A6E' }}>
+                          Local stdio connections don&apos;t require authentication.
                         </p>
                       </div>
                       <div className="mb-3">
-                        <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
-                          Command
-                        </label>
+                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Command</label>
                         <input
                           type="text"
                           value={editing.config.command || ''}
-                          onChange={(e) => setEditing({
-                            ...editing,
-                            config: { ...editing.config, command: e.target.value },
-                          })}
-                          className="w-full px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-600 rounded text-stone-800 dark:text-stone-200"
-                          placeholder="uv"
+                          onChange={(e) => setEditing({ ...editing, config: { ...editing.config, command: e.target.value } })}
+                          className="w-full px-3 py-2 text-sm rounded-lg input-chamber" placeholder="uv"
                         />
                       </div>
                       <div className="mb-3">
-                        <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
-                          Args (comma-separated)
-                        </label>
+                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Args (comma-separated)</label>
                         <input
                           type="text"
                           value={(editing.config.args || []).join(', ')}
-                          onChange={(e) => setEditing({
-                            ...editing,
-                            config: {
-                              ...editing.config,
-                              args: e.target.value.split(',').map((s) => s.trim()),
-                            },
-                          })}
-                          className="w-full px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-600 rounded text-stone-800 dark:text-stone-200"
-                          placeholder="run, main.py"
+                          onChange={(e) => setEditing({ ...editing, config: { ...editing.config, args: e.target.value.split(',').map(s => s.trim()) } })}
+                          className="w-full px-3 py-2 text-sm rounded-lg input-chamber" placeholder="run, main.py"
                         />
                       </div>
                       <div className="mb-3">
-                        <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
-                          Working Directory
-                        </label>
+                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Working Directory</label>
                         <input
                           type="text"
                           value={editing.config.cwd || ''}
-                          onChange={(e) => setEditing({
-                            ...editing,
-                            config: { ...editing.config, cwd: e.target.value },
-                          })}
-                          className="w-full px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-600 rounded text-stone-800 dark:text-stone-200"
-                          placeholder="/path/to/backend"
+                          onChange={(e) => setEditing({ ...editing, config: { ...editing.config, cwd: e.target.value } })}
+                          className="w-full px-3 py-2 text-sm rounded-lg input-chamber" placeholder="/path/to/backend"
                         />
                       </div>
                     </>
                   )}
 
-                  {/* Save / Cancel */}
                   <div className="flex gap-2">
-                    <button
-                      onClick={handleSaveServer}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
-                    >
+                    <button onClick={handleSaveServer} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all btn-brass">
                       <Save className="w-3 h-3" /> Save
                     </button>
                     <button
                       onClick={() => setEditing(null)}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-200 dark:bg-zinc-700 hover:bg-stone-300 dark:hover:bg-zinc-600 text-stone-700 dark:text-stone-300 rounded text-xs font-medium transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                      style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
                     >
                       Cancel
                     </button>
@@ -479,31 +427,23 @@ const MCPConnectionPanel: React.FC = () => {
 
               {/* Connected Tools */}
               {status.connected && tools.length > 0 && (
-                <div className="mt-4 p-3 bg-stone-50 dark:bg-zinc-900 rounded-lg border border-stone-200 dark:border-zinc-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Wrench className="w-4 h-4 text-stone-600 dark:text-stone-400" />
-                    <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                <div className="mt-4 p-3.5 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)' }}>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <Wrench className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                       {tools.length} Tools Available
                     </span>
-                    {loadingTools && <Loader2 className="w-3 h-3 animate-spin text-stone-500" />}
-                    <button
-                      onClick={fetchTools}
-                      disabled={loadingTools}
-                      className="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
-                    >
+                    {loadingTools && <Loader2 className="w-3 h-3 animate-spin" style={{ color: 'var(--text-tertiary)' }} />}
+                    <button onClick={fetchTools} disabled={loadingTools} className="ml-auto text-xs font-medium disabled:opacity-50" style={{ color: 'var(--accent)' }}>
                       Refresh
                     </button>
                   </div>
                   <div className="space-y-1.5 max-h-40 overflow-y-auto">
                     {tools.map((tool, i) => (
-                      <div key={i} className="p-2 bg-white dark:bg-zinc-800 rounded border border-stone-200 dark:border-zinc-700">
-                        <div className="font-medium text-xs text-stone-800 dark:text-stone-200">
-                          {tool.name}
-                        </div>
+                      <div key={i} className="p-2.5 rounded-lg" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                        <div className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>{tool.name}</div>
                         {tool.description && (
-                          <div className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 line-clamp-2">
-                            {tool.description}
-                          </div>
+                          <div className="text-[11px] mt-0.5 line-clamp-2" style={{ color: 'var(--text-tertiary)' }}>{tool.description}</div>
                         )}
                       </div>
                     ))}
@@ -518,7 +458,7 @@ const MCPConnectionPanel: React.FC = () => {
                   setRawConfigError('');
                 }
               }}>
-                <summary className="text-xs text-stone-500 dark:text-stone-400 cursor-pointer hover:text-stone-700 dark:hover:text-stone-300">
+                <summary className="text-xs cursor-pointer transition-colors" style={{ color: 'var(--text-tertiary)' }}>
                   Edit mcp.json
                 </summary>
                 <div className="mt-2">
@@ -529,11 +469,11 @@ const MCPConnectionPanel: React.FC = () => {
                       setRawConfigText(e.target.value);
                       setRawConfigError('');
                     }}
-                    className="w-full p-3 text-[11px] bg-stone-100 dark:bg-zinc-900 rounded border border-stone-200 dark:border-zinc-700 text-stone-700 dark:text-stone-300 font-mono resize-y min-h-[120px] max-h-[300px]"
+                    className="w-full p-3 text-[11px] rounded-lg font-mono resize-y min-h-[120px] max-h-[300px] input-chamber"
                     spellCheck={false}
                   />
                   {rawConfigError && (
-                    <p className="text-[11px] text-red-500 mt-1">{rawConfigError}</p>
+                    <p className="text-[11px] mt-1" style={{ color: '#C4534A' }}>{rawConfigError}</p>
                   )}
                   {editingRawConfig && (
                     <div className="flex gap-2 mt-2">
@@ -553,7 +493,7 @@ const MCPConnectionPanel: React.FC = () => {
                             setRawConfigError(e instanceof SyntaxError ? `Invalid JSON: ${e.message}` : 'Failed to save');
                           }
                         }}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all btn-brass"
                       >
                         <Save className="w-3 h-3" /> Save mcp.json
                       </button>
@@ -563,7 +503,8 @@ const MCPConnectionPanel: React.FC = () => {
                           setRawConfigText(JSON.stringify(mcpConfig, null, 2));
                           setRawConfigError('');
                         }}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-stone-200 dark:bg-zinc-700 hover:bg-stone-300 dark:hover:bg-zinc-600 text-stone-700 dark:text-stone-300 rounded text-xs font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
                       >
                         Cancel
                       </button>

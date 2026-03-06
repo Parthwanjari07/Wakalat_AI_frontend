@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, notFound, useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, notFound } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 import ChatMessage from '@/components/ChatMessage';
 import StreamingChatMessage from '@/components/StreamingChatMessage';
 import ToolCallLogs from '@/components/ToolCallLogs';
-import { ArrowUp, Bot } from 'lucide-react';
+import { ArrowUp, Scale, LoaderCircle } from 'lucide-react';
 
 export default function ChatPage() {
   const params = useParams();
   const id = params.id as string;
-  
-  // --- NEW: Get data and actions from our chat store ---
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const { chats, sendMessageWithGemini, setActiveChatId, markMessageAsStreamed } = useChatStore();
   const chat = chats.find(c => c.id === id);
 
@@ -21,8 +21,12 @@ export default function ChatPage() {
 
   useEffect(() => {
     setActiveChatId(id);
-    return () => setActiveChatId(null); // Clear active chat when leaving page
+    return () => setActiveChatId(null);
   }, [id, setActiveChatId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chat?.messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +34,6 @@ export default function ChatPage() {
 
     setIsSending(true);
     try {
-      // Use Gemini with MCP integration
       await sendMessageWithGemini(id, newMessage.trim(), true);
       setNewMessage('');
     } catch (error) {
@@ -41,51 +44,63 @@ export default function ChatPage() {
   };
 
   if (!chat) {
-    // This will show notFound if the ID is invalid
     return notFound();
   }
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-zinc-900">
+    <div className="flex flex-col h-screen" style={{ background: 'var(--bg-primary)' }}>
       <main className="flex-1 overflow-y-auto pt-20 pb-32">
         <div className="max-w-4xl mx-auto py-6 px-4">
+          {/* Chat Title */}
           <div className="text-center mb-10 pt-2">
-            <h1 className="text-2xl font-bold text-stone-600 dark:text-stone-400 tracking-wide">{chat.title}</h1>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="w-8 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--accent))' }} />
+              <Scale size={16} style={{ color: 'var(--accent)' }} />
+              <div className="w-8 h-px" style={{ background: 'linear-gradient(90deg, var(--accent), transparent)' }} />
+            </div>
+            <h1 className="font-serif text-2xl font-semibold tracking-tight" style={{ color: 'var(--text-secondary)' }}>
+              {chat.title}
+            </h1>
           </div>
-          <div className="space-y-0">
+
+          {/* Messages */}
+          <div className="space-y-0 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
             {chat.messages.map((message, index) => {
               const isLastMessage = index === chat.messages.length - 1;
               const isModel = message.role === 'Model';
 
-              // --- NEW: Use the Streaming component for the last AI message that hasn't been streamed ---
               if (isModel && isLastMessage && !message.isStreamed) {
                 return (
-                  <div key={index} className="w-full px-4 md:px-6 lg:px-8 py-4 flex bg-stone-50 dark:bg-[#171717]">
-                    <div className="w-full max-w-4xl mx-auto flex items-start gap-6">
-                        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-orange-500/10 dark:bg-blue-500/10">
-                            <Bot size={20} className="text-orange-500 dark:text-orange-400" />
+                  <div key={index} className="w-full px-4 md:px-6 lg:px-8 py-5" style={{ background: 'var(--bg-secondary)' }}>
+                    <div className="w-full max-w-4xl mx-auto flex items-start gap-4">
+                      <div
+                        className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg"
+                        style={{ background: 'var(--accent-subtle)', border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)' }}
+                      >
+                        <Scale size={14} style={{ color: 'var(--accent)' }} />
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <div className="mb-1.5 text-xs font-semibold tracking-wider uppercase" style={{ color: 'var(--accent)' }}>
+                          WAKALAT.AI
                         </div>
-                        <div className="flex-grow text-stone-800 dark:text-[#e3e3e3]">
-                            <div className="mb-1 text-sm font-medium text-orange-600 dark:text-orange-400">WAKALAT.AI</div>
-                            {message.toolCalls && message.toolCalls.length > 0 && (
-                              <ToolCallLogs toolCalls={message.toolCalls} />
-                            )}
-                            <StreamingChatMessage
-                              content={message.content}
-                              onStreamComplete={() => markMessageAsStreamed(id, index)}
-                            />
-                        </div>
+                        {message.toolCalls && message.toolCalls.length > 0 && (
+                          <ToolCallLogs toolCalls={message.toolCalls} />
+                        )}
+                        <StreamingChatMessage
+                          content={message.content}
+                          onStreamComplete={() => markMessageAsStreamed(id, index)}
+                        />
+                      </div>
                     </div>
                   </div>
                 );
               }
-              
-              // Render regular messages normally (with tool logs for model messages)
+
               return (
                 <div key={index}>
                   {isModel && message.toolCalls && message.toolCalls.length > 0 && (
-                    <div className="w-full px-4 md:px-6 lg:px-8 bg-stone-100 dark:bg-[#171717]">
-                      <div className="w-full max-w-4xl mx-auto pl-14">
+                    <div className="w-full px-4 md:px-6 lg:px-8" style={{ background: 'var(--bg-secondary)' }}>
+                      <div className="w-full max-w-4xl mx-auto pl-12">
                         <ToolCallLogs toolCalls={message.toolCalls} />
                       </div>
                     </div>
@@ -95,28 +110,39 @@ export default function ChatPage() {
               );
             })}
           </div>
+          <div ref={messagesEndRef} />
         </div>
       </main>
 
-      {/* --- NEW: Input form for follow-up messages --- */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm z-20">
+      {/* Input Footer */}
+      <footer
+        className="fixed bottom-0 left-0 right-0 z-20"
+        style={{
+          background: 'color-mix(in srgb, var(--bg-primary) 92%, transparent)',
+          backdropFilter: 'blur(12px) saturate(1.2)',
+        }}
+      >
         <div className="max-w-4xl mx-auto p-4">
-            <form onSubmit={handleSendMessage} className="relative">
-                <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Ask a follow-up question..."
-                    className="w-full bg-stone-100 dark:bg-zinc-800 border border-stone-300 dark:border-zinc-700 rounded-lg text-stone-800 dark:text-white placeholder:text-stone-500 dark:placeholder:text-stone-400 p-4 pr-14 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
-                <button
-                    type="submit"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-amber-600 hover:bg-amber-700 rounded-full disabled:bg-stone-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed transition-colors"
-                    disabled={!newMessage.trim() || isSending}
-                >
-                    <ArrowUp size={20} className="text-white" />
-                </button>
-            </form>
+          <form onSubmit={handleSendMessage} className="relative">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Ask a follow-up question..."
+              className="w-full rounded-xl text-[15px] p-4 pr-14 input-chamber"
+            />
+            <button
+              type="submit"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed btn-brass"
+              disabled={!newMessage.trim() || isSending}
+            >
+              {isSending ? (
+                <LoaderCircle size={16} className="animate-spin" />
+              ) : (
+                <ArrowUp size={16} />
+              )}
+            </button>
+          </form>
         </div>
       </footer>
     </div>

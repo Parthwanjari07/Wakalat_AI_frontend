@@ -5,23 +5,13 @@ import { NestedInputField, NestedTextareaField } from './FormFields';
 const CriminalCaseForm = () => {
   return (
     <section>
-      <h3 className="text-lg font-semibold mb-3 text-stone-800 dark:text-stone-200 border-b border-stone-300 dark:border-zinc-600 pb-2">
+      <h3 className="font-serif text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
         C. Criminal Case Details
       </h3>
+      <p className="text-xs mb-4" style={{ color: 'var(--text-tertiary)' }}>Offence details and applicable sections</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-        <NestedInputField
-          parent="criminalDetails"
-          name="natureOfOffence"
-          label="Nature of Offence"
-          placeholder="e.g., Theft / Assault / Cheating"
-          isRequired
-        />
-        <NestedInputField
-          parent="criminalDetails"
-          name="sections"
-          label="Sections Applicable"
-          placeholder="e.g., Section 420, 302"
-        />
+        <NestedInputField parent="criminalDetails" name="natureOfOffence" label="Nature of Offence" placeholder="e.g., Theft / Assault / Cheating" isRequired />
+        <NestedInputField parent="criminalDetails" name="sections" label="Sections Applicable" placeholder="e.g., Section 420, 302" />
       </div>
       <NestedTextareaField
         parent="criminalDetails"

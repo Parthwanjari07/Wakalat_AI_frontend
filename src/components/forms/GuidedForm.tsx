@@ -35,12 +35,13 @@ const GuidedForm = () => {
   };
 
   return (
-    <div className="p-6 bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 rounded-lg">
-      <h2 className="text-xl font-semibold mb-4 text-stone-800 dark:text-stone-200">
+    <div className="card-chamber p-6">
+      <h2 className="font-serif text-xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
         Guided Case Details
       </h2>
+      <p className="text-xs mb-5" style={{ color: 'var(--text-tertiary)' }}>Fill in the details below for a comprehensive legal analysis</p>
 
-      <SelectField 
+      <SelectField
         name="caseType"
         label="Select Case Type"
         options={caseTypeOptions}
@@ -49,13 +50,13 @@ const GuidedForm = () => {
 
       {caseType && (
         <>
-          <hr className="my-6 border-stone-300 dark:border-zinc-600" />
+          <div className="brass-line my-6" />
           <MetadataForm />
-          
-          <hr className="my-6 border-stone-300 dark:border-zinc-600" />
+
+          <div className="brass-line my-6" />
           <PartiesForm />
-          
-          <hr className="my-6 border-stone-300 dark:border-zinc-600" />
+
+          <div className="brass-line my-6" />
           {renderCaseSpecificForm()}
         </>
       )}
@@ -63,6 +64,4 @@ const GuidedForm = () => {
   );
 };
 
-// --- THIS IS THE CRUCIAL LINE ---
-// Ensures that this component is the default export of this file.
 export default GuidedForm;

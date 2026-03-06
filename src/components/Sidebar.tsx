@@ -3,9 +3,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSidebarStore } from '../store/sidebarStore';
-import { useChatStore } from '@/store/chatStore'; // --- NEW: Import Chat Store ---
-import { Plus, PanelLeftClose, MoreHorizontal } from 'lucide-react';
-import Image from 'next/image';
+import { useChatStore } from '@/store/chatStore';
+import { Plus, PanelLeftClose, MoreHorizontal, Scale, MessageSquare } from 'lucide-react';
 
 const sidebarVariants = {
   open: { x: 0, transition: { type: "spring" as const, stiffness: 300, damping: 40 } },
@@ -14,8 +13,7 @@ const sidebarVariants = {
 
 const Sidebar = () => {
   const { close } = useSidebarStore();
-  // --- NEW: Get chats and active ID from the store ---
-  const { chats, activeChatId } = useChatStore(); 
+  const { chats, activeChatId } = useChatStore();
 
   return (
     <motion.aside
@@ -23,61 +21,123 @@ const Sidebar = () => {
       initial="closed"
       animate="open"
       exit="closed"
-      className="fixed top-0 left-0 h-full w-72 bg-stone-50 dark:bg-zinc-900 border-r border-stone-200 dark:border-zinc-800 z-50 flex flex-col"
+      className="fixed top-0 left-0 h-full w-72 z-50 flex flex-col"
+      style={{
+        background: 'var(--bg-secondary)',
+        borderRight: '1px solid var(--border)',
+      }}
     >
       <div className="p-4 flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4">
-            <Link href="/" className="flex items-center gap-2">
-                <Image src="/brown_logo.png" alt="Logo" width={32} height={32} className="block dark:hidden" />
-                <Image src="/white_logo.png" alt="Logo" width={32} height={32} className="hidden dark:block" />
-                <span className="text-xl font-bold text-stone-800 dark:text-stone-200">WAKALAT.AI</span>
-            </Link>
-            <button onClick={close} className="p-1 text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-100">
-                <PanelLeftClose size={20} />
-            </button>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <Link href="/" className="flex items-center gap-2.5" onClick={close}>
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center"
+              style={{ background: 'var(--accent)', color: '#0C0B09' }}
+            >
+              <Scale size={14} strokeWidth={2.5} />
+            </div>
+            <span className="font-serif text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              WAKALAT
+            </span>
+            <span className="text-[10px] font-medium tracking-widest" style={{ color: 'var(--accent)' }}>.AI</span>
+          </Link>
+          <button
+            onClick={close}
+            className="p-1.5 rounded-lg transition-colors btn-ghost"
+          >
+            <PanelLeftClose size={18} />
+          </button>
         </div>
 
-        <Link 
+        {/* New Chat Button */}
+        <Link
           href="/"
           onClick={close}
-          className="flex items-center gap-2 w-full justify-center mb-4 px-4 py-2 bg-zinc-800 text-stone-200 rounded-md text-sm font-semibold hover:bg-zinc-700 transition-colors"
+          className="flex items-center gap-2.5 w-full justify-center mb-5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all btn-brass"
         >
           <Plus size={16} />
           New Chat
         </Link>
-        
-        {/* --- NEW: Render chat history dynamically from the store --- */}
-        <nav className="flex-grow overflow-y-auto -mr-2 pr-2">
+
+        {/* Divider */}
+        <div className="brass-line mb-4" />
+
+        {/* Chat History */}
+        <nav className="flex-grow overflow-y-auto -mr-2 pr-2 space-y-0.5">
           {chats.length > 0 && (
-            <div className="mb-4">
-              <h3 className="px-2 mb-1 text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase">Recent Chats</h3>
-              {chats.map((chat) => (
-                <Link
-                  href={`/chat/${chat.id}`}
-                  key={chat.id}
-                  onClick={close}
-                  className={`block p-2 text-sm rounded-md truncate ${
-                      activeChatId === chat.id 
-                      ? 'bg-stone-200 dark:bg-zinc-800 text-stone-800 dark:text-stone-200' 
-                      : 'text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  {chat.title}
-                </Link>
-              ))}
+            <div>
+              <h3
+                className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                Recent Conversations
+              </h3>
+              {chats.map((chat) => {
+                const isActive = activeChatId === chat.id;
+                return (
+                  <Link
+                    href={`/chat/${chat.id}`}
+                    key={chat.id}
+                    onClick={close}
+                    className="flex items-center gap-2.5 p-2.5 text-sm rounded-lg truncate transition-all"
+                    style={{
+                      background: isActive ? 'var(--accent-subtle)' : 'transparent',
+                      color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                      borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+                    }}
+                    onMouseEnter={e => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'var(--surface-hover)';
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                      }
+                    }}
+                  >
+                    <MessageSquare size={14} className="flex-shrink-0" style={{ opacity: 0.5 }} />
+                    <span className="truncate">{chat.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+          {chats.length === 0 && (
+            <div className="text-center py-8">
+              <MessageSquare size={24} className="mx-auto mb-2" style={{ color: 'var(--text-tertiary)', opacity: 0.4 }} />
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>No conversations yet</p>
             </div>
           )}
         </nav>
 
-        <div className="mt-auto border-t border-stone-200 dark:border-zinc-700 pt-4">
-          <Link 
+        {/* User Profile */}
+        <div className="mt-auto pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+          <Link
             href="/profile"
             onClick={close}
-            className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-stone-200 dark:hover:bg-zinc-800"
+            className="flex items-center gap-3 w-full p-2.5 rounded-lg transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'var(--surface-hover)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
           >
-            <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center font-bold text-white">S</div>
-            <span className="font-semibold text-sm text-stone-800 dark:text-stone-200">Sufiyan Sayyed</span>
-            <MoreHorizontal size={20} className="ml-auto text-stone-500 dark:text-stone-400" />
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center font-serif font-bold text-sm"
+              style={{ background: 'var(--accent)', color: '#0C0B09' }}
+            >
+              S
+            </div>
+            <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>Sufiyan Sayyed</span>
+            <MoreHorizontal size={16} className="ml-auto" style={{ color: 'var(--text-tertiary)' }} />
           </Link>
         </div>
       </div>
