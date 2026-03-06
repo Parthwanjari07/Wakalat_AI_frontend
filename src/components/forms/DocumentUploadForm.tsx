@@ -110,7 +110,6 @@ const DocumentUploadForm = ({ onFilesChange }: DocumentUploadFormProps) => {
       if (newFiles.length === 0) {
         onFilesChange([]);
       } else {
-        // Re-read remaining files (they're still in memory as File objects)
         Promise.all(
           newFiles.map(async (file) => ({
             name: file.name,
@@ -132,11 +131,11 @@ const DocumentUploadForm = ({ onFilesChange }: DocumentUploadFormProps) => {
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className={`w-full flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg transition-colors ${
-          isDragging
-            ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-500/10'
-            : 'border-stone-300 dark:border-zinc-700'
-        }`}
+        className="w-full flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-xl transition-all"
+        style={{
+          borderColor: isDragging ? 'var(--accent)' : 'var(--border)',
+          background: isDragging ? 'var(--accent-subtle)' : 'var(--bg-elevated)',
+        }}
       >
         <input
           type="file"
@@ -146,24 +145,26 @@ const DocumentUploadForm = ({ onFilesChange }: DocumentUploadFormProps) => {
           className="hidden"
           onChange={handleFileSelect}
         />
-        <label
-          htmlFor="fileInput"
-          className="flex flex-col items-center justify-center gap-2 cursor-pointer"
-        >
-          <Upload className="w-8 h-8 text-stone-500 dark:text-stone-400" />
-          <p className="text-stone-500 dark:text-stone-400 text-center">
+        <label htmlFor="fileInput" className="flex flex-col items-center justify-center gap-3 cursor-pointer">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center"
+            style={{ background: 'var(--accent-subtle)', border: '1px solid color-mix(in srgb, var(--accent) 15%, transparent)' }}
+          >
+            <Upload className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+          </div>
+          <div className="text-center">
             {isReading ? (
-              <span className="text-amber-600 dark:text-amber-500">Reading files...</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--accent)' }}>Reading files...</span>
             ) : isDragging ? (
-              <span className="text-amber-600 dark:text-amber-500">Drop your documents here</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--accent)' }}>Drop your documents here</span>
             ) : (
-              <span>
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 Drag & drop your documents here or{' '}
-                <span className="text-amber-600 dark:text-amber-500">browse</span>
+                <span className="font-medium" style={{ color: 'var(--accent)' }}>browse</span>
               </span>
             )}
-          </p>
-          <p className="text-xs text-stone-400 dark:text-stone-500">
+          </div>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
             Supports: PDF, DOC, DOCX (max 10MB each)
           </p>
         </label>
@@ -171,30 +172,27 @@ const DocumentUploadForm = ({ onFilesChange }: DocumentUploadFormProps) => {
 
       {/* File List */}
       {files.length > 0 && (
-        <div className="mt-6 space-y-3">
+        <div className="mt-4 space-y-2">
           {files.map((file, index) => (
             <div
               key={`${file.name}-${index}`}
-              className="flex items-center justify-between p-3 bg-stone-100 dark:bg-zinc-800 rounded-lg"
+              className="flex items-center justify-between p-3.5 rounded-xl"
+              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-3">
-                <File className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+                <File className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                 <div>
-                  <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
-                    {file.name}
-                  </p>
-                  <p className="text-xs text-stone-500 dark:text-stone-400">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{file.name}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <CheckCircle2 className="w-4 h-4" style={{ color: '#5C8A6E' }} />
                 <button
                   onClick={() => removeFile(index)}
-                  className="p-1 hover:bg-stone-200 dark:hover:bg-zinc-700 rounded-full transition-colors"
+                  className="p-1 rounded-lg transition-colors btn-ghost"
                 >
-                  <X className="w-4 h-4 text-stone-500 dark:text-stone-400" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

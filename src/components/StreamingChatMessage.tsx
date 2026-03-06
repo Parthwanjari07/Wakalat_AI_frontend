@@ -8,12 +8,11 @@ interface StreamingChatMessageProps {
   onStreamComplete?: () => void;
 }
 
-// This component simulates a streaming text effect for a better UX
 const StreamingChatMessage = ({ content, onStreamComplete }: StreamingChatMessageProps) => {
   const [displayedContent, setDisplayedContent] = useState('');
 
   useEffect(() => {
-    setDisplayedContent(''); // Reset on new content
+    setDisplayedContent('');
     let index = 0;
     const words = content.split(' ');
 
@@ -23,19 +22,22 @@ const StreamingChatMessage = ({ content, onStreamComplete }: StreamingChatMessag
         index++;
       } else {
         clearInterval(intervalId);
-        // Call the callback when streaming is complete
         if (onStreamComplete) {
           onStreamComplete();
         }
       }
-    }, 50); // Adjust speed of streaming here (lower is faster)
+    }, 50);
 
-    return () => clearInterval(intervalId); // Cleanup on component unmount
+    return () => clearInterval(intervalId);
   }, [content, onStreamComplete]);
 
   return (
-    <div className="prose prose-invert max-w-none text-[#e3e3e3]">
+    <div className="prose prose-chamber max-w-none text-[15px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
       <ReactMarkdown>{displayedContent}</ReactMarkdown>
+      <span
+        className="inline-block w-0.5 h-4 ml-0.5 animate-pulse-brass rounded-full"
+        style={{ background: 'var(--accent)' }}
+      />
     </div>
   );
 };

@@ -2,26 +2,264 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Small global defaults */
+/* ============================================
+   WAKALAT.AI — Judicial Chambers Theme
+   ============================================ */
+
 :root {
-	--bg: #ffffff;
-	--fg: #111827;
-}
-/* 
-  We are using the 'Inter' font from Google Fonts. 
-  Next.js automatically handles importing this.
-  We will set it up in the layout.tsx file in the next step.
-*/
-html, body {
-	height: 100%;
-	background-color: var(--bg);
-	color: var(--fg);
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+  /* Light theme */
+  --bg-primary: #FAF8F5;
+  --bg-secondary: #F2EDE6;
+  --bg-tertiary: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --border: #E5DED3;
+  --border-subtle: #F0EBE3;
+  --text-primary: #1A1612;
+  --text-secondary: #6B6158;
+  --text-tertiary: #9A8F80;
+  --accent: #A38542;
+  --accent-hover: #8B6F35;
+  --accent-subtle: rgba(163, 133, 66, 0.08);
+  --accent-glow: rgba(163, 133, 66, 0.15);
+  --surface-hover: rgba(0, 0, 0, 0.03);
+  --mesh-1: rgba(163, 133, 66, 0.06);
+  --mesh-2: rgba(200, 169, 110, 0.04);
+  --mesh-3: rgba(242, 237, 230, 0.6);
+  --grain-opacity: 0.03;
+  --input-bg: #FFFFFF;
+  --input-border: #E5DED3;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
 }
 
-/* Find this existing block at the end of the file */
-/* Ensure this rule at the end of the file looks like this */
-.dark body {
-  @apply bg-zinc-900 text-stone-300;
+.dark {
+  --bg-primary: #0C0B09;
+  --bg-secondary: #131110;
+  --bg-tertiary: #1A1714;
+  --bg-elevated: #1E1B17;
+  --border: #2D2923;
+  --border-subtle: #232019;
+  --text-primary: #E8E0D0;
+  --text-secondary: #9A8F80;
+  --text-tertiary: #6B6158;
+  --accent: #C8A96E;
+  --accent-hover: #D4B97E;
+  --accent-subtle: rgba(200, 169, 110, 0.08);
+  --accent-glow: rgba(200, 169, 110, 0.12);
+  --surface-hover: rgba(255, 255, 255, 0.03);
+  --mesh-1: rgba(200, 169, 110, 0.04);
+  --mesh-2: rgba(163, 133, 66, 0.03);
+  --mesh-3: rgba(12, 11, 9, 0.8);
+  --grain-opacity: 0.04;
+  --input-bg: #161412;
+  --input-border: #2D2923;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1);
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Grain Texture Overlay
+   ============================================ */
+.grain-overlay::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* ============================================
+   Custom Scrollbar
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ============================================
+   Decorative Elements
+   ============================================ */
+.brass-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+.brass-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+/* ============================================
+   Gradient Mesh Background
+   ============================================ */
+.mesh-bg {
+  background:
+    radial-gradient(at 20% 80%, var(--mesh-1) 0%, transparent 50%),
+    radial-gradient(at 80% 20%, var(--mesh-2) 0%, transparent 50%),
+    radial-gradient(at 50% 50%, var(--mesh-3) 0%, transparent 70%),
+    var(--bg-primary);
+}
+
+/* ============================================
+   Typography Utilities
+   ============================================ */
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ============================================
+   Prose Overrides for Chat
+   ============================================ */
+.prose-chamber {
+  --tw-prose-body: var(--text-primary);
+  --tw-prose-headings: var(--text-primary);
+  --tw-prose-links: var(--accent);
+  --tw-prose-bold: var(--text-primary);
+  --tw-prose-counters: var(--text-secondary);
+  --tw-prose-bullets: var(--text-tertiary);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--text-secondary);
+  --tw-prose-quote-borders: var(--accent);
+  --tw-prose-code: var(--accent);
+  --tw-prose-pre-bg: var(--bg-tertiary);
+  --tw-prose-pre-code: var(--text-primary);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border-subtle);
+}
+
+.prose-chamber pre {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.prose-chamber code {
+  font-weight: 500;
+}
+
+.prose-chamber code::before,
+.prose-chamber code::after {
+  display: none;
+}
+
+.prose-chamber a {
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.prose-chamber blockquote {
+  border-left-color: var(--accent);
+  font-style: italic;
+}
+
+/* ============================================
+   Form Focus Styles
+   ============================================ */
+.input-chamber {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.input-chamber::placeholder {
+  color: var(--text-tertiary);
+}
+
+.input-chamber:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+/* ============================================
+   Button Styles
+   ============================================ */
+.btn-brass {
+  background: var(--accent);
+  color: #0C0B09;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-brass:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+/* ============================================
+   Card Styles
+   ============================================ */
+.card-chamber {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+}
+
+/* ============================================
+   Stagger Animation Delays
+   ============================================ */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* ============================================
+   Shimmer Loading Effect
+   ============================================ */
+.shimmer-loading {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--bg-elevated) 50%,
+    var(--bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ============================================
+   Selection Color
+   ============================================ */
+::selection {
+  background: var(--accent);
+  color: #0C0B09;
 }
